@@ -19,8 +19,8 @@ The *LazySysAdmin* machine will be constantly waiting for interactive logon whil
 1. **Reconnaissance**: `nmap` for port scanning and service identification
 2. **Discovery**: `smbclient` for exploring victim's SMB shared objects and analyzing configuration files
 3. **Initial Access & Exploitation**:
-    * **Valid Accounts**: abuse of admin's valid credentials trough remote SSH access
-    * **Exploit Public-Facing Application**: abuse of admin DB's valid credentials to obtain a Reverse Shell trough WordPress' admin panel
+    * **Valid Accounts**: abuse of admin's valid credentials through remote SSH access
+    * **Exploit Public-Facing Application**: abuse of admin DB's valid credentials to obtain a Reverse Shell through WordPress' admin panel
 4. **Execution**: RCE via Reverse Shell using Python `pty` module
 5. **Privilege Escalation** & CTF: abusing permissive configuration in `/etc/sudoers` (`ALL:ALL ALL`) to obtain interactive shell as *root* & completing the writeup "capturing the flag" inside *root*'s directory   
 
@@ -53,7 +53,7 @@ I was indeed able to access them with privileges of downloading files and traver
 
 ### 3a. Initial Access: Valid Accounts
 
-As we previously saw from the screeshot there is also an open SSH port that I tried to use with a bunch of simple usernames combined with the password of the host-admin account, having success with the one in the following screenshot.
+As we previously saw from the screenshot there is also an open SSH port that I tried to use with a bunch of simple usernames combined with the password of the host-admin account, having success with the one in the following screenshot.
 
 ![Found SSH connection](images/ssh_valid_accounts.png)  
 Now I'm currently logged in as *togie*. In section ([5](#ch5)) we'll see how I used this connection.
@@ -62,7 +62,7 @@ Now I'm currently logged in as *togie*. In section ([5](#ch5)) we'll see how I u
 ### 3b. Exploitation: Exploit Public-Facing Application
 
 An alternative, longer and graphical way of reaching the same position starts from surfing the address `<serverIP>/wordpress/wp-admin/index.php` on the browser. This is the admin login page, in which I inserted the credentials of the admin DB found inside the file at ([2](#ch2)) and successfully entered as WordPress admin.  
-With these capabilities I altered one of the *php* pages of the active template (I've chosen `404.php`) to inject a ready-to-use Reverse Shell, foundable at `/usr/share/webshells/php/php-reverse-shell.php` inside Kali and omitted for brevity and slightly modified to connect to the Kali machine (IP & port).  
+With these capabilities I altered one of the *php* pages of the active template (I've chosen `404.php`) to inject a ready-to-use Reverse Shell, located at `/usr/share/webshells/php/php-reverse-shell.php` inside Kali and omitted for brevity and slightly modified to connect to the Kali machine (IP & port).  
 I set up a listener on Kali using `netcat`:  
 ```bash
 nc -lvnp 4444
@@ -114,4 +114,4 @@ To secure the server it is needed to:
 
 ## LLM usage
 
-I discovered the (b) attack path asking [Gemini](https://www.google.com/aclk?sa=L&ai=DChsSEwiq6O7WseOUAxVOroMHHaABLvcYACICCAEQABoCZWY&ae=2&co=1&ase=2&gclid=CjwKCAjwuO_QBhAWEiwAIkVhU1NXR5CK1vHMXhIxlYq06KJ3lVDYHgkUqjDc0mCSOIT5HQj7IYmyThoCOZgQAvD_BwE&cce=2&category=acrcp_v1_71&sig=AOD64_2SCp3Dgcu6Ck2tQGAzg5TCuYk-Qg&q&nis=4&adurl&ved=2ahUKEwi75efWseOUAxXogf0HHU19G-AQ0Qx6BAgNEAE "Have a look at the LLM") to better explain the exploit steps of the writeup and I choose to follow it, and so diverge from the writeup's path, because easier to comprehend.
+I discovered the (b) attack path asking [Gemini](https://gemini.google.com "Have a look at the LLM") to better explain the exploit steps of the writeup and I choose to follow it, and so diverge from the writeup's path, because easier to comprehend.

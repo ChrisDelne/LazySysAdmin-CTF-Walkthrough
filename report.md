@@ -102,7 +102,7 @@ Then I triggered the Reverse Shell visiting the _php_ page just modified via bro
 
 So far the Reverse Shell allowed me to obtain a Shell inside the server but it is non-interactive, lacking a proper TTY, which prevents features like job control, proper input handling, and commands such as _su_. In addition, the account which I'm interacting with is the usual on which the Apache server runs (_www-data_). I, thus, verified that Python is installed and executed some Python commands to use the module `pty` to execute an interactive Shell, fooling the underlying Linux kernel into thinking that the session is originating from a legitimate local terminal emulator.
 ```bash
-python3 -c 'import pty; pty.spawn("/bin/bash")'
+python -c 'import pty; pty.spawn("/bin/bash")'
 ```
 This Shell allowed me to impersonate _togie_ using:
 ```bash

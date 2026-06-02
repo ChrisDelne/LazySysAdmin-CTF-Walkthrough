@@ -1,6 +1,6 @@
 # LazySysAdmin CTF walkthrough
 
-This small project aims to breach the vulnerable VM **[LazySysAdmin](https://www.vulnhub.com/entry/lazysysadmin-1,205/ "Download the VM")**, a Boot-to-Root challenge with full writeup available on [VulnHub](https://www.hackingarticles.in/hack-lazysysadmin-vm-ctf-challenge/ "See the original writeup"), to demonstrate how misconfigurations and poor administrative practices can lead to a deep compromise in just few minutes.  
+This small project aims to breach the vulnerable VM **[LazySysAdmin](https://www.vulnhub.com/entry/lazysysadmin-1,205/ "Download the VM")** found on VulnHub, a Boot-to-Root challenge with full writeup available on [this article](https://www.hackingarticles.in/hack-lazysysadmin-vm-ctf-challenge/ "See the original writeup"), to demonstrate how misconfigurations and poor administrative practices can lead to a deep compromise in just few minutes.  
 > _Note_: at the beginning the project started following the writeup mentioned but subsequently evolved into a different approach. To see the original idea follow the link above.
 
 
@@ -9,6 +9,7 @@ This small project aims to breach the vulnerable VM **[LazySysAdmin](https://www
 > ⚠️**Threat model**: attacker is able to communicate with the vulnerable service (e.g., service has public IP & vulnerable ports open)
 
 Environment: _Kali Linux_ (attacker) vs _LazySysAdmin_ (victim) within the same Host-Only VirtualBox isolated network to secure the test environment.  
+
 The _LazySysAdmin_ machine will be constantly waiting for interactive logon while attacker is operating beneath.   
 
 ![LazySysAdmin machine during the whole attack](images/LazySysAdmin.png)
@@ -21,7 +22,7 @@ The following schema is just to have an idea of the attack structure, it is not 
 2. **Discovery**: `smbclient` for exploring victim's SMB shared objects and analyzing configuration files
 3. **Initial Access & Exploitation**:
     * **Valid Accounts**: abuse of admin's valid credentials through remote SSH access
-    * **Exploit Public-Facing Application**: abuse of admin DB's valid credentials to obtain a Reverse Shell through WordPress' admin panel
+    * **Exploit Public-Facing Application**: abuse of admin database's valid credentials to obtain a Reverse Shell through WordPress' admin panel
 4. **Execution**: RCE via Reverse Shell using Python `pty` module
 5. **Privilege Escalation** & CTF: abusing permissive configuration in `/etc/sudoers` (`ALL:ALL ALL`) to obtain interactive shell as _root_ & completing the challenge "capturing the flag" inside _root_'s directory   
 
@@ -56,40 +57,44 @@ I was indeed able to access them with privileges of downloading files and traver
 * username and password of the service-admin control panel in WordPress: _Admin, TogieMYSQL12345^^_  
 
 **Security implications**  
-These findings higlight a critical flaw in administrative operations: _credential harvesting through data leakage_. `deets.txt` suggests that the administrator used the public network share as a temporary/permanent notepad for sensitive assets. In addition, the presence of `wp-config.php` is particularly sensitive because WordPress stores database credentials in plaintext to establish runtime connections.
+These findings higlight a critical flaw in administrative operations: _credential harvesting through data leakage_.  
+* `deets.txt` suggests that the admin used the publicly available _share$_ folder as a temporary/permanent notepad for sensitive information
+* `wp-config.php` is critical from a security point of view because WordPress stores database's credentials in plaintext to establish runtime connections
 
 > For the following sections (3,4,5) I decided to take a partial detour from the original writeup because I noticed a simpler way of continuing the attack (follow the route "a" for SSH or "b" via Wordpress).
 
 ---
 
-### 3a. Initial Access: Valid Accounts
+### 3a. Initial Access: Valid Accounts <a id="ch3parA"></a>
 
 As we previously saw from the screenshot there is also an open SSH port that I tried to use with a bunch of simple usernames combined with the password of the host-admin account, having success with the one in the following screenshot.
 
 ![Found SSH connection](images/ssh_valid_accounts.png)  
-I tried this specific username in particular because it is the username of the creator of the CTF, so in the context of the attack it is reasonable to assume that the attacker may know the username of the attacked account in advance (e.g: due to a leak, prior organization knowledge).  
+I tried this specific username in particular because it is the username of the creator of the CTF, so in the context of the attack it is reasonable to assume that the attacker may know the username of the attacked account in advance (e.g., due to a leak or prior organization knowledge).  
 
 Now I'm currently logged in as _togie_. In section ([5](#ch5)) we'll see how I used this connection.
 
 
-### 3b. Exploitation: Exploit Public-Facing Application
+### 3b. Exploitation: Exploit Public-Facing Application <a id="ch3parB"></a>
 
-An alternative, longer and graphical way of reaching the same position starts from surfing the address `<serverIP>/wordpress/wp-admin/index.php` on the browser. This is the admin login page, in which I inserted the credentials of the admin DB found inside the file at ([2](#ch2)) and successfully entered as WordPress admin.  
+An alternative, longer and graphical way of reaching the same position starts from surfing the address `<serverIP>/wordpress/wp-admin/index.php` on the browser.  
 
-With these capabilities I altered one of the _php_ pages of the active template (I've chosen `404.php`) to inject a ready-to-use Reverse Shell, located at `/usr/share/webshells/php/php-reverse-shell.php` inside Kali, omitted for brevity and slightly modified to connect to the Kali machine (IP & port). 
+![WodPress admin control panel](images/wordpress_admin_login_page.png)  
+This is the admin login page, in which I inserted the credentials of the admin database found inside the file at ([2](#ch2)) and successfully entered as WordPress admin.  
+
+With these capabilities I altered one of the _php_ pages of the active template (I've chosen `404.php`) to inject a ready-to-use Reverse Shell, located at `/usr/share/webshells/php/php-reverse-shell.php` inside Kali, omitted for brevity and slightly modified to connect to the Kali machine (IP & port).  
+However, a default version of the Reverse Shell is available at [my GitHub](php-reverse-shell.php "php-reverse-shell.php"). 
 
 The Reverse Shell is preferable w.r.t. the Bind Shell from the attacker point of view because it forces the victim (upon triggering) to create an outbound connection to a machine attacker-controlled (Kali in this case), less likely to be blocked by perimeter defenses such as firewalls and NAT, in contrast with the Bind Shell.
  
 A command-line tool not only useful for reading and writing data across network connections using TCP/UDP is Netcat (`nc`), it operates in two primary modes: Listen mode (acting as a server) and Connect mode (acting as a client).  
-With the following command I set up a verbose listener on Kali on port 4444:  
+With the following command I set up a verbose listener on Kali on port 4444, the "server" of the connection:  
 ```bash
 nc -lvnp 4444
 ```
 >Observation: I've choosen port 4444 but if I wanted to make the attacker sneakier I could have just used a well-known port (e.g., 80, 443) to mimic a usual outbound connection.  
 
 Then I triggered the Reverse Shell visiting the _php_ page just modified via browser, in my case `<serverIP>/wordpress/wp-content/themes/twentyfifteen/404.php`. 
-
-A default version of the Reverse Shell is available at [my GitHub](php-reverse-shell.php "php-reverse-shell.php").
 
 ---
 
@@ -116,10 +121,10 @@ I executed the following command to know which commands _togie_ is able to execu
 sudo -l
 ```
 The output is pretty self-explanatory: `(ALL:ALL) ALL`, meaning that this account is able to execute any command on the host.  
-Executing `sudo su` I was able to become _root_ and complete the challenge capturing the flag:
-* via SSH
+Executing `sudo su` I was able to become _root_, gaining full privileges on the machine, and complete the challenge capturing the flag:
+* route [a](#ch3parA), via SSH
 ![Capturing the flag via SSH](images/ssh_CTF.png)
-* using the Reverse Shell
+* route [b](#ch3parB), using the Reverse Shell
 ![Capturing the flag using the Reverse Shell](images/reverse_shell_CTF.png)
 
 
@@ -127,12 +132,12 @@ Executing `sudo su` I was able to become _root_ and complete the challenge captu
 
 This attack demonstrates the effectiveness of attacks based on misconfigurations. It was not necessary to exploit any vulnerability; the whole compromise was carried out abusing overprivileges and bad practices only.  
 
-1. **Credential exposure at first**  
-The compromise originated entirely from credential disclosure. The SMB share directory exposed sensitive files containing authentication material, simplifying subsequent phases of the attack
+1. **Credential exposure**  
+The compromise originated entirely from credential disclosure. The SMB _share$_ directory exposed sensitive files containing authentication material, simplifying subsequent phases of the attack
 2. **Potential impact of (even partial) credential reuse**  
 From a theoretical point of view, compromising the right set of credentials could compromise multiple trust boundaries (e.g., the ones of the server and of the service) or simplify future attack steps
-3. **Critical weakness**  
-A far too permissive `(ALL:ALL) ALL` _sudo_ configuration for the account leveraged by the attacker led to a full system compromise. Even if earlier attack stages will be partially mitigated, obtaining access as this user would still result in a critical compromise. 
+3. **Critical flaw on application of _principle of least privilege_**  
+A far too permissive `(ALL:ALL) ALL` _sudo_ configuration for the account _togie_ leveraged by the attacker led to a full system compromise. Even if earlier attack stages will be partially mitigated, obtaining access as this user would still result in a critical compromise. 
 4. **CVE observation**  
 The system was also affected by **CVE-2018-15473**, a user enumeration vulnerability in OpenSSH. However, exploiting this vulnerability was not necessary because enough information had already been obtained before the attack itself through disclosed credentials and contextual information
 
@@ -143,7 +148,7 @@ The attack leverages only onto human errors, mainly violations to the _Principle
 To secure the server it is needed to apply:
 * **Samba configuration change**: disable anonymous _guest_ access to shared directories
 * **Password policy hardening**: use for each IT entity a different, "complex" and "reasonably long" password (e.g., not the same between service and workstation)
-* **Privilege restriction**: restrict privileges inside `/etc/sudoers` in a way that normal user cannot execute any command as root without admin password
+* **Privilege restriction**: restrict privileges inside `/etc/sudoers` in a way that normal user (e.g., _togie_) cannot execute any command not useful on the pursuit of his actions
 * **Log auditing**: implementing some logging policy allow to eventually generate alerts whenever local non-privileged user triggers _sudo -l_
 
 

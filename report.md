@@ -137,7 +137,7 @@ The compromise originated entirely from credential disclosure. The SMB _share$_ 
 2. **Potential impact of (even partial) credential reuse**  
 From a theoretical point of view, compromising the right set of credentials could compromise multiple trust boundaries (e.g., the ones of the server and of the service) or simplify future attack steps
 3. **Critical flaw on application of _principle of least privilege_**  
-A far too permissive `(ALL:ALL) ALL` _sudo_ configuration for the account _togie_ leveraged by the attacker led to a full system compromise. Even if earlier attack stages will be partially mitigated, obtaining access as this user would still result in a critical compromise. 
+A far too permissive `(ALL:ALL) ALL` _sudo_ configuration for the account _togie_ leveraged by the attacker led to a full system compromise. Even if earlier attack stages will be partially mitigated, obtaining access as this user would still result in a critical compromise 
 4. **CVE observation**  
 The system was also affected by **CVE-2018-15473**, a user enumeration vulnerability in OpenSSH. However, exploiting this vulnerability was not necessary because enough information had already been obtained before the attack itself through disclosed credentials and contextual information
 

@@ -65,17 +65,17 @@ These findings higlight a critical flaw in administrative operations: _credentia
 
 ---
 
-### 3a. Initial Access: Valid Accounts <a id="ch3parA"></a>
+### 3a. Initial Access: Valid Accounts
 
 As we previously saw from the screenshot there is also an open SSH port that I tried to use with a bunch of simple usernames combined with the password of the host-admin account, having success with the one in the following screenshot.
 
 ![Found SSH connection](images/ssh_valid_accounts.png)  
 I tried this specific username in particular because it is the username of the creator of the CTF, so in the context of the attack it is reasonable to assume that the attacker may know the username of the attacked account in advance (e.g., due to a leak or prior organization knowledge).  
 
-Now I'm currently logged in as _togie_. In section ([5](#ch5)) we'll see how I used this connection.
+Now I'm currently logged in as _togie_. In section ([5](#5-privilege-escalation--ctf)) we'll see how I used this connection.
 
 
-### 3b. Exploitation: Exploit Public-Facing Application <a id="ch3parB"></a>
+### 3b. Exploitation: Exploit Public-Facing Application
 
 An alternative, longer and graphical way of reaching the same position starts from surfing the address `<serverIP>/wordpress/wp-admin/index.php` on the browser.  
 
@@ -112,7 +112,7 @@ For a complete Python `pty` documentation see [pty: Pseudo-terminal utilities](h
 
 ---
 
-### 5. Privilege Escalation & CTF <a id="ch5"></a>
+### 5. Privilege Escalation & CTF
 
 > From now on the attack follows almost the same path.  
 
@@ -122,9 +122,9 @@ sudo -l
 ```
 The output is pretty self-explanatory: `(ALL:ALL) ALL`, meaning that this account is able to execute any command on the host.  
 Executing `sudo su` I was able to become _root_, gaining full privileges on the machine, and complete the challenge capturing the flag:
-* route [a](#ch3parA), via SSH
+* route [a](#3a-initial-access-valid-accounts), via SSH
 ![Capturing the flag via SSH](images/ssh_CTF.png)
-* route [b](#ch3parB), using the Reverse Shell
+* route [b](#3b-exploitation-exploit-public-facing-application), using the Reverse Shell
 ![Capturing the flag using the Reverse Shell](images/reverse_shell_CTF.png)
 
 
